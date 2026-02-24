@@ -7,6 +7,7 @@ import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
 import Badge from "../../components/ui/Badge";
 import Loader from "../../components/Loader";
+import DiscussionPanel from "../../components/discussion/DiscussionPanel"; // ✅ Added
 
 export default function OrganizerEventDetail() {
   const { id } = useParams();
@@ -29,7 +30,6 @@ export default function OrganizerEventDetail() {
 
   if (!data) return <Loader />;
 
-  // Filter participants based on search, payment, and attendance
   const filteredParticipants = data.participants?.filter((p) => {
     const fullName = `${p.participantId?.firstName || ""} ${p.participantId?.lastName || ""}`.toLowerCase();
     const matchesSearch = fullName.includes(search.toLowerCase());
@@ -42,9 +42,10 @@ export default function OrganizerEventDetail() {
     return matchesSearch && matchesPayment && matchesAttendance;
   });
 
-  const pendingOrders = data.participants?.filter((p) => p.paymentStatus === "pending");
+  const pendingOrders = data.participants?.filter(
+    (p) => p.paymentStatus === "pending"
+  );
 
-  // Capitalize words utility
   const capitalizeWords = (str) =>
     str?.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
 
@@ -80,7 +81,7 @@ export default function OrganizerEventDetail() {
           </Card>
         </div>
 
-        {/* QR Scanner Button */}
+        {/* QR Scanner */}
         <div className="mb-8">
           <Button variant="primary" as="a" href="/organizer/scan">
             Go to QR Scanner
@@ -122,8 +123,13 @@ export default function OrganizerEventDetail() {
             variant="success"
             onClick={async () => {
               try {
-                const response = await api.get(`/events/attendance/export/${id}`, { responseType: "blob" });
-                const blob = new Blob([response.data], { type: "text/csv" });
+                const response = await api.get(
+                  `/events/attendance/export/${id}`,
+                  { responseType: "blob" }
+                );
+                const blob = new Blob([response.data], {
+                  type: "text/csv",
+                });
                 const url = window.URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.href = url;
@@ -157,24 +163,34 @@ export default function OrganizerEventDetail() {
             <tbody>
               {filteredParticipants?.map((p) => (
                 <tr key={p._id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">{p.participantId?.firstName} {p.participantId?.lastName}</td>
-                  <td className="p-3">{p.participantId?.email}</td>
-                  <td className="p-3">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "-"}</td>
                   <td className="p-3">
-                    <Badge color={
-                      p.paymentStatus === "approved"
-                        ? "green"
-                        : p.paymentStatus === "rejected"
-                        ? "red"
-                        : "yellow"
-                    }>
+                    {p.participantId?.firstName} {p.participantId?.lastName}
+                  </td>
+                  <td className="p-3">{p.participantId?.email}</td>
+                  <td className="p-3">
+                    {p.createdAt
+                      ? new Date(p.createdAt).toLocaleDateString()
+                      : "-"}
+                  </td>
+                  <td className="p-3">
+                    <Badge
+                      color={
+                        p.paymentStatus === "approved"
+                          ? "green"
+                          : p.paymentStatus === "rejected"
+                          ? "red"
+                          : "yellow"
+                      }
+                    >
                       {capitalizeWords(p.paymentStatus)}
                     </Badge>
                   </td>
                   <td className="p-3">{p.teamName || "-"}</td>
                   <td className="p-3">
                     {p.attendanceStatus ? (
-                      <span className="text-green-600 font-medium">Present</span>
+                      <span className="text-green-600 font-medium">
+                        Present
+                      </span>
                     ) : (
                       <div className="flex gap-2 items-center">
                         <span className="text-gray-400">Absent</span>
@@ -183,7 +199,10 @@ export default function OrganizerEventDetail() {
                           className="text-xs"
                           onClick={async () => {
                             try {
-                              await api.put(`/events/attendance/manual/${p._id}`, { note: "Manual override from dashboard" });
+                              await api.put(
+                                `/events/attendance/manual/${p._id}`,
+                                { note: "Manual override from dashboard" }
+                              );
                               window.location.reload();
                             } catch {
                               alert("Manual override failed");
@@ -210,13 +229,24 @@ export default function OrganizerEventDetail() {
             <div className="grid md:grid-cols-2 gap-6 mb-10">
               {pendingOrders.map((order) => (
                 <Card key={order._id} className="bg-yellow-50 border-yellow-200">
-                  <p><strong>Name:</strong> {order.participantId?.firstName} {order.participantId?.lastName}</p>
-                  <p><strong>Variant:</strong> {order.variant?.size} / {order.variant?.color}</p>
+                  <p>
+                    <strong>Name:</strong>{" "}
+                    {order.participantId?.firstName}{" "}
+                    {order.participantId?.lastName}
+                  </p>
+                  <p>
+                    <strong>Variant:</strong>{" "}
+                    {order.variant?.size} / {order.variant?.color}
+                  </p>
                   <div className="mt-4 flex gap-3">
                     <Button
                       variant="success"
                       onClick={() =>
-                        api.put(`/events/merchandise/order/${order._id}`, { action: "approve" })
+                        api
+                          .put(
+                            `/events/merchandise/order/${order._id}`,
+                            { action: "approve" }
+                          )
                           .then(() => window.location.reload())
                       }
                     >
@@ -225,7 +255,11 @@ export default function OrganizerEventDetail() {
                     <Button
                       variant="danger"
                       onClick={() =>
-                        api.put(`/events/merchandise/order/${order._id}`, { action: "reject" })
+                        api
+                          .put(
+                            `/events/merchandise/order/${order._id}`,
+                            { action: "reject" }
+                          )
                           .then(() => window.location.reload())
                       }
                     >
@@ -237,6 +271,11 @@ export default function OrganizerEventDetail() {
             </div>
           </>
         )}
+
+        {/* Discussion Forum Section */}
+        <div className="mt-12">
+          <DiscussionPanel eventId={id} />
+        </div>
 
       </Container>
     </div>
