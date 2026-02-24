@@ -1,0 +1,8 @@
+Frontend URL:
+https://felicity-event-management-red.vercel.app
+
+Backend Base API URL:
+https://felicity-event-management-y5l6.onrender.com/api
+
+GitHub Repository:
+https://github.com/nityanand123gupta/felicity-event-management
